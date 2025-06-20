@@ -1,6 +1,7 @@
 package com.hana.account_service.service;
 
 import com.hana.account_service.entity.Account;
+import com.hana.account_service.grpc.GrpcNotificationClient;
 import com.hana.account_service.repository.AccountRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -12,10 +13,14 @@ import java.util.Optional;
 public class AccountService {
     @Autowired
     private  AccountRepository accountRepository;
+    @Autowired
+    private GrpcNotificationClient grpcNotificationClient;
     public Account create(Account account){
         Double balance = account.getBalance()!= null ? account.getBalance():0.0;
         account.setBalance(balance);
-       return accountRepository.save(account);
+        grpcNotificationClient.sendNotification("Un compte a été créé pour le client ID: " + account.getClientId());
+
+        return accountRepository.save(account);
     }
 
 
