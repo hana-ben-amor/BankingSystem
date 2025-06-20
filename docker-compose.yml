@@ -1,0 +1,100 @@
+version: '3.8'
+services:
+  postgres-account:
+    image: postgres:13
+    container_name: postgres-account
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: accountdb
+      POSTGRES_USER: accountuser
+      POSTGRES_PASSWORD: accountpass
+    volumes:
+      - account_data:/var/lib/postgresql/data
+
+  postgres-client:
+    image: postgres:13
+    container_name: postgres-client
+    ports:
+      - "5434:5432"
+    environment:
+      POSTGRES_DB: clientdb
+      POSTGRES_USER: clientuser
+      POSTGRES_PASSWORD: clientpass
+    volumes:
+      - client_data:/var/lib/postgresql/data
+
+  postgres-transaction:
+    image: postgres:13
+    container_name: postgres-transaction
+    ports:
+      - "5435:5432"
+    environment:
+      POSTGRES_DB: transactiondb
+      POSTGRES_USER: transactionuser
+      POSTGRES_PASSWORD: transactionpass
+    volumes:
+      - transaction_data:/var/lib/postgresql/data
+
+  postgres-notification:
+    image: postgres:13
+    container_name: postgres-notification
+    ports:
+      - "5436:5432"
+    environment:
+      POSTGRES_DB: notificationdb
+      POSTGRES_USER: notificationuser
+      POSTGRES_PASSWORD: notificationpass
+    volumes:
+      - notification_data:/var/lib/postgresql/data
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    ports:
+      - "5051:80"  # nouveau port
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    depends_on:
+      - postgres-account
+      - postgres-client
+      - postgres-transaction
+      - postgres-notification
+
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+  kafka:
+    image: confluentinc/cp-kafka:7.3.0
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    ports:
+      - "8090:8080"
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_CLUSTERS_0_NAME: bank-cluster
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+volumes:
+  account_data:
+  client_data:
+  transaction_data:
+  notification_data:
